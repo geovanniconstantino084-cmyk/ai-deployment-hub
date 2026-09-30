@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Bot, Github, Rocket, ShieldCheck } from 'lucide-react'
 
 interface Project {
@@ -15,11 +15,34 @@ export default function Home() {
   const [name, setName] = useState('')
   const [type, setType] = useState('Chatbot')
   const [instructions, setInstructions] = useState('')
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ai-projects')
+      if (saved) {
+        setProjects(JSON.parse(saved))
+      }
+    } catch (error) {
+      console.error('Error reading projects from localStorage', error)
+    }
+    setIsLoaded(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isLoaded) return
+    localStorage.setItem('ai-projects', JSON.stringify(projects))
+  }, [projects, isLoaded])
 
   const addProject = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name || !instructions) return
-    setProjects([...projects, { name, type, status: 'Borrador', instructions }])
+
+    setProjects((prev) => [
+      ...prev,
+      { name, type, status: 'Borrador', instructions },
+    ])
+
     setName('')
     setInstructions('')
   }
@@ -65,6 +88,7 @@ export default function Home() {
         <section className="grid gap-8 lg:grid-cols-3">
           <form onSubmit={addProject} className="rounded-xl bg-white p-6 shadow-sm lg:col-span-1">
             <h2 className="mb-5 text-xl font-bold">Instrucciones del dueño</h2>
+
             <label className="mb-1 block text-sm font-medium">Nombre de la app</label>
             <input
               required
@@ -73,6 +97,7 @@ export default function Home() {
               className="mb-4 w-full rounded-lg border p-3"
               placeholder="Mi app IA"
             />
+
             <label className="mb-1 block text-sm font-medium">Tipo</label>
             <select
               value={type}
@@ -84,6 +109,7 @@ export default function Home() {
               <option>Analizador</option>
               <option>Otra</option>
             </select>
+
             <label className="mb-1 block text-sm font-medium">Instrucciones</label>
             <textarea
               required
@@ -92,9 +118,11 @@ export default function Home() {
               className="mb-5 h-32 w-full rounded-lg border p-3"
               placeholder="Describe lo que debe construir la IA..."
             />
+
             <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700">
               <Rocket size={18} /> Guardar proyecto
             </button>
+
             <p className="mt-4 flex gap-2 text-xs text-slate-500">
               <ShieldCheck size={16} /> Las claves permanecen en el servidor y nunca se muestran en el panel.
             </p>
@@ -102,8 +130,11 @@ export default function Home() {
 
           <section className="rounded-xl bg-white p-6 shadow-sm lg:col-span-2">
             <h2 className="mb-5 text-xl font-bold">Tabla de control</h2>
+
             {projects.length === 0 ? (
-              <p className="py-12 text-center text-slate-500">Aún no hay proyectos. Escribe las instrucciones del dueño para comenzar.</p>
+              <p className="py-12 text-center text-slate-500">
+                Aún no hay proyectos. Escribe las instrucciones del dueño para comenzar.
+              </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
